@@ -11,13 +11,14 @@ const form = document.querySelector('.form');
 const gallery = document.querySelector('.gallery');
 const preloader = document.querySelector('.loader-wrap');
 const loadMoreBtn = document.querySelector('.load-more-btn');
-// const secondPreloader = document.querySelector('.second-loader-wrap');
 
 //Підключення бібліотеки для відображення галереї, що гортається
 const lightbox = new SimpleLightbox('.gallery a', {
   captionsData: 'alt', //Підпис під зображенням
   captionDelay: 250, //Час, після якого буде відображений підпис
 });
+
+// список параметрів, який буде передаватися при НТТР запиті (pixabay-api.js)
 const params = {
   query: '',
   page: 1,
@@ -25,16 +26,16 @@ const params = {
   max_page: 0,
 };
 
-form.addEventListener('submit', handlerSubmit); //Прослуховувач подій
+form.addEventListener('submit', handlerSubmit); //Прослуховувач форми
 
 async function handlerSubmit(event) {
   event.preventDefault(); //Запобігаємо дефолтному перезавантаженню сторінки
   gallery.innerHTML = ''; //очищаємо вміст галереї перед новим пошуком
-  params.page = 1;
-  params.query = form.elements.input.value.trim(); //Обробка запиту користувача
+  params.page = 1; // Після кожного нового запиту номер сторінки має скидатися до 1
+  params.query = form.elements.input.value.trim(); //Запит користувача
 
+  //Якщо користувач залишив поле пустим
   if (!params.query) {
-    //Якщо користувач залишив поле пустим
     iziToast.warning({
       title: 'Caution',
       titleColor: 'white',
@@ -52,11 +53,11 @@ async function handlerSubmit(event) {
     return;
   }
 
+  //Якщо користувач щось ввів
   preloader.style.display = 'flex'; //Додавання прелоадера
   try {
     const picture = await getPicturesByQuery(params); //HTTP запит, результатом якого буде об'єкт, записаний в picture
-
-    // Якщо об'єкт бекенду data.hits пустий (користувач ввів щось невалідне) -> сповіщуємо про це
+    // Якщо масив об'єкту бекенду picture.hits пустий (користувач ввів щось невалідне) -> сповіщуємо про це
     if (picture.hits.length === 0) {
       iziToast.error({
         title: 'Error',
@@ -72,13 +73,16 @@ async function handlerSubmit(event) {
         close: false,
         closeOnClick: true,
       });
+      // Якщо запит валідний
     } else {
-      params.max_page = Math.ceil(picture.totalHits / params.per_page);
+      params.max_page = Math.ceil(picture.totalHits / params.per_page); //Визначаємо максимально можливу кількість сторінок
+      //Якщо ця к-ть біль, ніж 1, то ...
       if (params.max_page > 1) {
-        loadMoreBtn.style.display = 'block';
-        loadMoreBtn.addEventListener('click', handlerLoadMore);
+        loadMoreBtn.style.display = 'block'; //Показуємо кнопку, бо ще є, куди гортати
+        loadMoreBtn.addEventListener('click', handlerLoadMore); // Додаємоп прослуховувач на кнопку "Завантажити ще"
+        //Якщо сторінка тільки одна
       } else {
-        loadMoreBtn.style.display = 'none';
+        loadMoreBtn.style.display = 'none'; //Ховаємо кнопку
       }
       gallery.innerHTML = renderGalleryCard(picture.hits); //Виклик функції для створення розмітки
       lightbox.refresh(); //Метод бібліотеки SimpleLightbox, який видаляє і повторно ініціалізує лайтбокс
@@ -105,15 +109,22 @@ async function handlerSubmit(event) {
 }
 
 async function handlerLoadMore() {
-  params.page += 1;
-  preloader.style.display = 'flex';
-  loadMoreBtn.style.display = 'none';
+  params.page += 1; //При натисканні на кнопку завантажується наступла порція зображень, тобно наступна сторінка, тому номер сторінки має збільшуватись кожного разу, коли ми натискаємо на кнопку
+  preloader.style.display = 'flex'; //Показуємо прелоадер
+  loadMoreBtn.style.display = 'none'; // Приховуємо кнопку
   try {
-    const picture = await getPicturesByQuery(params);
-    gallery.insertAdjacentHTML('beforeend', renderGalleryCard(picture.hits));
-    lightbox.refresh();
+    const picture = await getPicturesByQuery(params); //НТТР запит, отримуємо об'єкт у відповідь
+    gallery.insertAdjacentHTML('beforeend', renderGalleryCard(picture.hits)); // Малюємо розмітку
+    lightbox.refresh(); // Перезбираємо лайтбокс
 
-    //!тут буде плавний скролл
+    //! плавний скролл
+    const card = document.querySelector('.gallery-item'); //Важливо ініціалізувати змінну тут, так як інформація в ній актуальна. А якщо оголосити її в глобальній області видимості, то кидає помилку, бо на момент ініціалізації елемет не існує.
+    const cardHeight = card.getBoundingClientRect().height; // Метод для розрахунку розмірів і положення елемента відносно в'юпорта (повертає об'єкт розмірів) https://developer.mozilla.org/en-US/docs/Web/API/Element/getBoundingClientRect
+    //Метод, що скролить вміст сторінки за певними умовами https://developer.mozilla.org/en-US/docs/Web/API/Element/getBoundingClientRect
+    window.scrollBy({
+      top: cardHeight * 2, //Скроллимо вгову на дві висоти картки
+      behavior: 'smooth', //плавний скролл (опшн методу, див. документацію)
+    });
   } catch (error) {
     iziToast.error({
       title: 'Error',
@@ -129,10 +140,12 @@ async function handlerLoadMore() {
       closeOnClick: true,
     });
   } finally {
-    preloader.style.display = 'none';
+    preloader.style.display = 'none'; //прибрали прелоадер
+    //Якщо поточна сторінка = максимальній (останній), то...
     if (params.page === params.max_page) {
-      loadMoreBtn.style.display = 'none';
-      loadMoreBtn.removeEventListener('click', handlerLoadMore);
+      loadMoreBtn.style.display = 'none'; //прибираємо кнопку
+      loadMoreBtn.removeEventListener('click', handlerLoadMore); //прибираємо прослуховувач подій, так як досягли максимуму сторінок і кнопка більше не потрібна
+      //Інформуємо користувача, що він досяг кінця списку зображень
       iziToast.warning({
         title: 'Caution',
         titleColor: 'white',
@@ -148,7 +161,7 @@ async function handlerLoadMore() {
         closeOnClick: true,
       });
     } else {
-      loadMoreBtn.style.display = 'block';
+      loadMoreBtn.style.display = 'block'; //показуємо кнопку
     }
   }
 }
