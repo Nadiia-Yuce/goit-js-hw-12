@@ -70,7 +70,6 @@ img {
   display: flex;
   justify-content: center;
   gap: 8px;
-  margin-bottom: 32px;
 }
 
 #search {
@@ -96,7 +95,8 @@ img {
   color: #808080;
 }
 
-.submit-btn {
+.submit-btn,
+.load-more-btn {
   border: none;
   border-radius: 8px;
   padding: 8px 16px;
@@ -109,7 +109,8 @@ img {
   color: #fff;
 }
 
-.submit-btn:hover {
+.submit-btn:hover,
+.load-more-btn:hover {
   background: #6c8cff;
 }
 
@@ -118,6 +119,7 @@ img {
   flex-wrap: wrap;
   justify-content: center;
   gap: 24px;
+  margin: 32px 0;
 }
 
 .gallery-item {
@@ -194,4 +196,10 @@ img {
 .loader {
   display: block;
   text-align: center;
+}
+
+.load-more-btn {
+  width: 125px;
+  margin: 0 auto;
+  display: none;
 }
