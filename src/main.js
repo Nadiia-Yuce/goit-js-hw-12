@@ -33,6 +33,8 @@ async function handlerSubmit(event) {
   gallery.innerHTML = ''; //очищаємо вміст галереї перед новим пошуком
   params.page = 1; // Після кожного нового запиту номер сторінки має скидатися до 1
   params.query = form.elements.input.value.trim(); //Запит користувача
+  loadMoreBtn.style.display = 'none'; //прибираємо кнопку, щоб вона не спливала після 2го сабміту
+  loadMoreBtn.removeEventListener('click', handlerLoadMore); // нема кнопки - нема слухача
 
   //Якщо користувач залишив поле пустим
   if (!params.query) {
@@ -44,7 +46,7 @@ async function handlerSubmit(event) {
       messageColor: 'white',
       messageSize: '16px',
       position: 'topRight',
-      backgroundColor: '#ffa000',
+      backgroundColor: 'rgba(255, 160, 0, 0.6)',
       iconUrl: cautionSvg,
       close: false,
       closeOnClick: true,
@@ -68,7 +70,7 @@ async function handlerSubmit(event) {
         messageColor: 'white',
         messageSize: '16px',
         position: 'bottomRight',
-        backgroundColor: '#ef4040',
+        backgroundColor: 'rgba(239, 64, 64, 0.6)',
         iconUrl: errorSvg,
         close: false,
         closeOnClick: true,
@@ -83,6 +85,21 @@ async function handlerSubmit(event) {
         //Якщо сторінка тільки одна
       } else {
         loadMoreBtn.style.display = 'none'; //Ховаємо кнопку
+        iziToast.warning({
+          title: 'Caution',
+          titleColor: 'white',
+          titleSize: '16px',
+          message:
+            'We are sorry, but you have reached the end of search results.',
+          messageColor: 'white',
+          messageSize: '16px',
+          position: 'bottomCenter',
+          backgroundColor: 'rgba(70, 130, 180, 0.8)',
+          iconUrl: cautionSvg,
+          close: false,
+          closeOnClick: true,
+          timeout: 6000,
+        });
       }
       gallery.innerHTML = renderGalleryCard(picture.hits); //Виклик функції для створення розмітки
       lightbox.refresh(); //Метод бібліотеки SimpleLightbox, який видаляє і повторно ініціалізує лайтбокс
@@ -97,7 +114,7 @@ async function handlerSubmit(event) {
       messageColor: 'white',
       messageSize: '16px',
       position: 'bottomRight',
-      backgroundColor: '#ef4040',
+      backgroundColor: 'rgba(239, 64, 64, 0.6)',
       iconUrl: errorSvg,
       close: false,
       closeOnClick: true,
@@ -134,7 +151,7 @@ async function handlerLoadMore() {
       messageColor: 'white',
       messageSize: '16px',
       position: 'bottomRight',
-      backgroundColor: '#ef4040',
+      backgroundColor: 'rgba(239, 64, 64, 0.6)',
       iconUrl: errorSvg,
       close: false,
       closeOnClick: true,
@@ -154,11 +171,12 @@ async function handlerLoadMore() {
           'We are sorry, but you have reached the end of search results.',
         messageColor: 'white',
         messageSize: '16px',
-        position: 'topRight',
-        backgroundColor: '#ffa000',
+        position: 'bottomCenter',
+        backgroundColor: 'rgba(70, 130, 180, 0.8)',
         iconUrl: cautionSvg,
         close: false,
         closeOnClick: true,
+        timeout: 6000,
       });
     } else {
       loadMoreBtn.style.display = 'block'; //показуємо кнопку
